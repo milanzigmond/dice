@@ -38,8 +38,10 @@ function dice_initialize(container) {
     function after_roll(notation, result) {
     }
 
-    var w = 300;
-    var h = 300;
+    var w = window.innerWidth/4;
+    var h = window.innerHeight/4;
+    // var w = 400;
+    // var h = 300;
     var box = new $t.dice.dice_box(canvas, { w: w, h: h });
 
     $t.bind(window, 'resize', function() {
@@ -52,7 +54,4 @@ function dice_initialize(container) {
 
     box.bind_mouse(container, throw_data, before_roll, after_roll);
     box.start_throw(throw_data, before_roll, after_roll);
-
-    var snd = new Audio("./sound/die.wav");
-    snd.play();
 }

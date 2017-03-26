@@ -166,7 +166,7 @@
                 shading: shading 
             }),
             new THREE.MeshPhongMaterial({ 
-                color: 0xff0000 
+                color: 0xfff000 
             }),
             new THREE.MeshPhongMaterial({ 
                 map: new THREE.TextureLoader().load('./img/1.png'),
@@ -230,7 +230,7 @@
 
     var that = this;
 
-    this.dice_box = function(container, dimentions) {
+    this.dice_box = function(container, dimensions) {
 
         this.use_adapvite_timestep = true;
         // this.animate_selector = true;
@@ -246,9 +246,9 @@
         container.appendChild(this.renderer.domElement);
         this.renderer.shadowMap.enabled = true;
         this.renderer.shadowMap.type = THREE.PCFShadowMap;
-        this.renderer.setClearColor(0xff0000, 1);
+        // this.renderer.setClearColor(0xff00ff);
 
-        this.reinit(container, dimentions);
+        this.reinit(container, dimensions);
 
         this.world.gravity.set(0, 0, -9.8 * 800);
         this.world.broadphase = new CANNON.NaiveBroadphase();
@@ -291,16 +291,17 @@
 
         this.last_time = 0;
         this.running = false;
-
+        
         this.renderer.render(this.scene, this.camera);
     }
 
-    this.dice_box.prototype.reinit = function(container, dimentions) {
+    this.dice_box.prototype.reinit = function(container, dimensions) {
+        console.log(dimensions.w + ', ' + dimensions.h);
         this.cw = container.clientWidth / 2;
         this.ch = container.clientHeight / 2;
-        if (dimentions) {
-            this.w = dimentions.w;
-            this.h = dimentions.h;
+        if (dimensions) {
+            this.w = dimensions.w;
+            this.h = dimensions.h;
         }
         else {
             this.w = this.cw;
@@ -346,18 +347,19 @@
         this.light2.shadow.mapSize.width = 1024;
         this.light2.shadow.mapSize.height = 1024;
         this.scene.add(this.light2);
-
+        
+        
         //Create a helper for the shadow camera (optional)
         // this.helper = new THREE.CameraHelper( this.light.shadow.camera );
         // this.scene.add( this.helper );
 
         if (this.desk) this.scene.remove(this.desk);
 
-        var deskGeometry = new THREE.PlaneGeometry(this.w * 2, this.h * 2, 1, 1);
-        var deskMaterial = new THREE.MeshStandardMaterial( {map: new THREE.TextureLoader().load('img/bg.png'), side: THREE.DoubleSide} );
-        //var deskMaterial = new THREE.MeshPhongMaterial({ color: that.desk_color });
+        this.deskGeometry = new THREE.PlaneGeometry(this.w * 2, this.h * 2, 1, 1);
+        // if(!this.deskMaterial) this.deskMaterial = new THREE.MeshPhongMaterial( {map: new THREE.TextureLoader().load('img/bg.png'), side: THREE.DoubleSide} );
+        this.deskMaterial = new THREE.MeshPhongMaterial({ color: that.desk_color });
 
-        this.desk = new THREE.Mesh( deskGeometry, deskMaterial );
+        this.desk = new THREE.Mesh( this.deskGeometry, this.deskMaterial );
                 // new THREE.MeshPhongMaterial({ color: that.desk_color }));
         this.desk.receiveShadow = true;
         this.scene.add(this.desk);
@@ -600,6 +602,9 @@
         box.rolling = true;
         if (before_roll) before_roll.call(box, vectors, notation, roll);
         else roll();
+
+        var snd = new Audio("./sound/die.wav");
+        snd.play();
     }
 
     this.dice_box.prototype.bind_mouse = function(container, throw_data, before_roll, after_roll) {
