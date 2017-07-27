@@ -154,7 +154,7 @@
         // this.dice_material = this.create_dice_materials(this.standart_d20_dice_face_labels, this.scale / 2, 1.0);
          
         var specularColor = 0xeeeeee;
-        var shineness = 3;
+        var shineness = 5;
         var shading = THREE.FlatShading;
 
         var materials = [
@@ -319,10 +319,10 @@
 
         var mw = Math.max(this.w, this.h);
         if (this.light) this.scene.remove(this.light);
-        this.light = new THREE.SpotLight(that.spot_light_color, 1);
+        this.light = new THREE.SpotLight(that.spot_light_color, 1.5);
         this.light.position.set(-mw / 2, mw / 2, mw * 2);
         this.light.target.position.set(0, 0, 0);
-        this.light.distance = mw * 5;
+        this.light.distance = mw * 3;
         this.light.castShadow = true;
         this.light.shadow.camera.near = mw / 10;
         this.light.shadow.camera.far = mw * 5;
@@ -334,30 +334,48 @@
         this.scene.add(this.light);
 
 
-        if (this.light2) this.scene.remove(this.light2);
-        this.light2 = new THREE.SpotLight(0x8f8f8f, 0.6);
-        this.light2.position.set(mw, -mw, mw * 2);
-        this.light2.target.position.set(0, 0, 0);
-        this.light2.distance = mw * 10;
-        this.light2.castShadow = false;
-        this.light2.shadow.camera.near = mw / 10;
-        this.light2.shadow.camera.far = mw * 5;
-        this.light2.shadow.camera.fov = 50;
-        this.light2.shadow.bias = 0.001;
-        this.light2.shadow.mapSize.width = 1024;
-        this.light2.shadow.mapSize.height = 1024;
-        this.scene.add(this.light2);
+        // if (this.light2) this.scene.remove(this.light2);
+        // this.light2 = new THREE.SpotLight(0x8f8f8f, 0);
+        // this.light2.position.set(mw, -mw, mw * 2);
+        // this.light2.target.position.set(0, 0, 0);
+        // this.light2.distance = mw * 10;
+        // this.light2.castShadow = false;
+        // this.light2.shadow.camera.near = mw / 10;
+        // this.light2.shadow.camera.far = mw * 5;
+        // this.light2.shadow.camera.fov = 50;
+        // this.light2.shadow.bias = 0.001;
+        // this.light2.shadow.mapSize.width = 1024;
+        // this.light2.shadow.mapSize.height = 1024;
+        // this.scene.add(this.light2);
         
         
         //Create a helper for the shadow camera (optional)
-        // this.helper = new THREE.CameraHelper( this.light.shadow.camera );
-        // this.scene.add( this.helper );
+        this.helper = new THREE.CameraHelper( this.light.shadow.camera );
+        this.scene.add( this.helper );
 
         if (this.desk) this.scene.remove(this.desk);
 
         this.deskGeometry = new THREE.PlaneGeometry(this.w * 2, this.h * 2, 1, 1);
         // if(!this.deskMaterial) this.deskMaterial = new THREE.MeshPhongMaterial( {map: new THREE.TextureLoader().load('img/bg.png'), side: THREE.DoubleSide} );
-        this.deskMaterial = new THREE.MeshPhongMaterial({ color: that.desk_color });
+
+
+        var texture = new THREE.TextureLoader().load( './img/pattern.png', function ( texture ) {
+            
+            texture.wrapS = texture.wrapT = THREE.RepeatWrapping;
+            texture.repeat.set( 50, 50 );
+
+        } );
+
+        this.deskMaterial = new THREE.MeshPhongMaterial( {
+
+           color: 'green',
+           specular:'blue',
+           shininess: 1,
+           map: texture,
+
+        } );
+
+
 
         this.desk = new THREE.Mesh( this.deskGeometry, this.deskMaterial );
                 // new THREE.MeshPhongMaterial({ color: that.desk_color }));
