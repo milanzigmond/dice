@@ -145,7 +145,7 @@
                 [-1, -1, 1], [1, -1, 1], [1, 1, 1], [-1, 1, 1]];
         var faces = [[0, 3, 2, 1, 1], [1, 2, 6, 5, 2], [0, 1, 5, 4, 3],
                 [3, 7, 6, 2, 4], [0, 4, 7, 3, 5], [4, 5, 6, 7, 6]];
-        return create_geom(vertices, faces, radius, -0.2, Math.PI / 4, 0.85);
+        return create_geom(vertices, faces, radius, -0.2, Math.PI / 4, 0.9);
     }
 
     this.create_d6 = function(pos) {
@@ -218,12 +218,11 @@
     this.dice_color = '#202020';
     this.spot_light_color = 0xaaaaaa;
     this.selector_back_colors = { color: 0x404040, shininess: 0, emissive: 0x858787 };
-    this.desk_color = 'brown';
 
     // this.known_types = ['d4', 'd6', 'd8', 'd10', 'd12', 'd20', 'd100'];
     this.dice_face_range = { 'd4': [1, 4], 'd6': [1, 6], 'd8': [1, 8], 'd10': [0, 9], 
         'd12': [1, 12], 'd20': [1, 20], 'd100': [0, 9] };
-    this.dice_mass = { 'd4': 300, 'd6': 300, 'd8': 340, 'd10': 350, 'd12': 350, 'd20': 400, 'd100': 350 };
+    this.dice_mass = { 'd4': 300, 'd6': 350, 'd8': 340, 'd10': 350, 'd12': 350, 'd20': 400, 'd100': 350 };
     this.dice_inertia = { 'd4': 5, 'd6': 13, 'd8': 10, 'd10': 9, 'd12': 8, 'd20': 6, 'd100': 9 };
 
     this.scale = 100;
@@ -369,8 +368,8 @@
         this.deskMaterial = new THREE.MeshPhongMaterial( {
 
            color: 'brown',
-           specular:'yellow',
-           shininess: 1,
+           specular:'orange',
+           shininess: 2,
            map: texture,
 
         } );
