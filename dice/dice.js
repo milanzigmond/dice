@@ -153,20 +153,20 @@
 
         // this.dice_material = this.create_dice_materials(this.standart_d20_dice_face_labels, this.scale / 2, 1.0);
          
-        var specularColor = 0xeeeeee;
+        var specularColor = 0xcccccc;
         var shineness = 5;
         var shading = THREE.FlatShading;
 
         var materials = [
             new THREE.MeshPhongMaterial({ 
-                map: new THREE.TextureLoader().load('./img/wood.jpg'),
+                map: new THREE.TextureLoader().load('./img/material.png'),
                 // color: 0x000000,
                 specular: specularColor, 
                 shininess: shineness, 
                 shading: shading 
             }),
             new THREE.MeshPhongMaterial({ 
-                color: 0xfff000 
+                color: 0x00ff00 
             }),
             new THREE.MeshPhongMaterial({ 
                 map: new THREE.TextureLoader().load('./img/1.png'),
@@ -216,7 +216,7 @@
     
     this.label_color = '#aaaaaa';
     this.dice_color = '#202020';
-    this.spot_light_color = 0xcccccc;
+    this.spot_light_color = 0xaaaaaa;
     this.selector_back_colors = { color: 0x404040, shininess: 0, emissive: 0x858787 };
     this.desk_color = 'brown';
 
@@ -350,8 +350,8 @@
         
         
         //Create a helper for the shadow camera (optional)
-        this.helper = new THREE.CameraHelper( this.light.shadow.camera );
-        this.scene.add( this.helper );
+        // this.helper = new THREE.CameraHelper( this.light.shadow.camera );
+        // this.scene.add( this.helper );
 
         if (this.desk) this.scene.remove(this.desk);
 
@@ -362,14 +362,14 @@
         var texture = new THREE.TextureLoader().load( './img/pattern.png', function ( texture ) {
             
             texture.wrapS = texture.wrapT = THREE.RepeatWrapping;
-            texture.repeat.set( 50, 50 );
+            texture.repeat.set( 40, 40 );
 
         } );
 
         this.deskMaterial = new THREE.MeshPhongMaterial( {
 
-           color: 'green',
-           specular:'blue',
+           color: 'brown',
+           specular:'yellow',
            shininess: 1,
            map: texture,
 

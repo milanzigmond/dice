@@ -23,11 +23,11 @@ function dice_initialize(container) {
 
     function throw_data() {
         return {
-            // set: ['d6', 'd6', 'd6', 'd6', 'd6', 'd6' ],
-            set: getSet(),
-            result: [ 1, 2, 3, 4, 5, 6],
+            set: ['d6', 'd6', 'd6', 'd6', 'd6', 'd6' ],
+            // set: getSet(),
+            // result: [ 1, 2, 3, 4, 5, 6],
             // result: [ 1, 1, 1, 1, 1, 1],
-            // result: [],
+            result: [],
         };
     }
 
