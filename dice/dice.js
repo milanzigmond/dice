@@ -6,21 +6,20 @@
     this.use_true_random = true;
     this.frame_rate = 1 / 60;
 
-    function prepare_rnd(callback) {
-        if (!random_storage.length && $t.dice.use_true_random) {
-            try {
-                $t.rpc({ method: "random", n: 512 }, 
-                function(random_responce) {
-                    if (!random_responce.error)
-                        random_storage = random_responce.result.random.data;
-                    else $t.dice.use_true_random = false;
-                    callback();
-                });
-                return;
-            }
-            catch (e) { $t.dice.use_true_random = false; }
+    function bind (sel, eventname, func, bubble) {
+        if (eventname.constructor === Array) {
+            for (var i in eventname)
+                sel.addEventListener(eventname[i], func, bubble ? bubble : false);
         }
-        callback();
+        else
+            sel.addEventListener(eventname, func, bubble ? bubble : false);
+    }
+    
+
+    function get_mouse_coords(ev) {
+        var touches = ev.changedTouches;
+        if (touches) return { x: touches[0].clientX, y: touches[0].clientY };
+        return { x: ev.clientX, y: ev.clientY };
     }
 
     function rnd() {
@@ -368,8 +367,8 @@
         this.deskMaterial = new THREE.MeshPhongMaterial( {
 
            color: 'brown',
-           specular:'orange',
-           shininess: 2,
+           specular:'green',
+           shininess: 10,
            map: texture,
 
         } );
@@ -396,9 +395,14 @@
         return vec;
     }
 
-    this.dice_box.prototype.generate_vectors = function(notation, vector, boost) {
+    this.dice_box.prototype.generate_vectors = function(throw_data, vector, boost) {
+        console.log('----generate_vectors');
+        console.log('throw_data: ' + throw_data.set);
+        console.log('vector: ' + vector.x + ' : ' + vector.y);
+        console.log('boost: ' + boost);
+
         var vectors = [];
-        for (var i in notation.set) {
+        for (var i in throw_data.set) {
             var vec = make_random_vector(vector);
             var pos = {
                 x: this.w * (vec.x > 0 ? -1 : 1) * 0.9,
@@ -409,14 +413,14 @@
             if (projector > 1.0) pos.y /= projector; else pos.x *= projector;
             var velvec = make_random_vector(vector);
             var velocity = { x: velvec.x * boost, y: velvec.y * boost, z: -10 };
-            var inertia = that.dice_inertia[notation.set[i]];
+            var inertia = that.dice_inertia[throw_data.set[i]];
             var angle = {
                 x: -(rnd() * vec.y * 5 + inertia * vec.y),
                 y: rnd() * vec.x * 5 + inertia * vec.x,
                 z: 0
             };
             var axis = { x: rnd(), y: rnd(), z: rnd(), a: rnd() };
-            vectors.push({ set: notation.set[i], pos: pos, velocity: velocity, angle: angle, axis: axis });
+            vectors.push({ set: throw_data.set[i], pos: pos, velocity: velocity, angle: angle, axis: axis });
         }
         return vectors;
     }
@@ -533,14 +537,14 @@
                     setTimeout(function() { requestAnimationFrame(function() 
                         {
                             t.__animate(tid); 
-                            $t.stats.update();
+                            // update stats
                         }); 
                     },(that.frame_rate - time_diff) * 1000);
                 }
                 else requestAnimationFrame(function() 
                     { 
                         t.__animate(tid); 
-                        $t.stats.update();
+                        // update stats
                     });
             })(this, threadid, this.use_adapvite_timestep);
         }
@@ -559,7 +563,10 @@
         setTimeout(function() { box.renderer.render(box.scene, box.camera); }, 100);
     }
 
+
     this.dice_box.prototype.prepare_dices_for_roll = function(vectors) {
+        console.log('prepare_dices_for_roll');
+        console.log(vectors);
         this.clear();
         this.iteration = 0;
         for (var i in vectors) {
@@ -568,7 +575,13 @@
         }
     }
 
+    // dice is mesh
     function shift_dice_faces(dice, value, res) {
+        console.log('shift_dice_faces');
+        console.log(dice);
+        console.log(value);
+        console.log(res);
+
         var r = that.dice_face_range[dice.dice_type];
         if (!(value >= r[0] && value <= r[1])) return;
         var num = value - res;
@@ -585,8 +598,12 @@
     }
 
     this.dice_box.prototype.roll = function(vectors, values, callback) {
+        console.log('roll');
+        console.log(vectors);
+        console.log(values);
 
         this.prepare_dices_for_roll(vectors);
+
         if (values != undefined && values.length) {
             this.use_adapvite_timestep = false;
             var res = this.emulate_throw();
@@ -594,6 +611,7 @@
             for (var i in res)
                 shift_dice_faces(this.dices[i], values[i], res[i]);
         }
+
         this.callback = callback;
         this.running = (new Date()).getTime();
         this.last_time = 0;
@@ -601,23 +619,37 @@
     }
 
     function throw_dices(box, vector, boost, dist, throw_data, before_roll, after_roll) {
+
+        console.log('-----throw_dices');
+        console.log('vector = ' + vector.x + ', ' + vector.y);
+        console.log('dist = ' + dist);
+        console.log('boost = ' + boost);
+        console.log('throw_data.set = ' + throw_data.set);
+        console.log('throw_data.result = ' + throw_data.result);
+        
+
         var uat = $t.dice.use_adapvite_timestep;
         function roll(request_results) {
             if (after_roll) {
                 box.clear();
-                box.roll(vectors, request_results || notation.result, function(result) {
-                    if (after_roll) after_roll.call(box, notation, result);
+                box.roll(vectors, request_results || throw_data.result, function(result) {
+                    if (after_roll) after_roll.call(box, throw_data, result);
                     box.rolling = false;
                     $t.dice.use_adapvite_timestep = uat;
                 });
             }
         }
-        vector.x /= dist; vector.y /= dist;
-        var notation = throw_data.call(box);
-        if (notation.set.length == 0) return;
-        var vectors = box.generate_vectors(notation, vector, boost);
+        vector.x /= dist; 
+        vector.y /= dist;
+
+
+
+
+        if (throw_data.set.length == 0) return;
+        var vectors = box.generate_vectors(throw_data, vector, boost);
         box.rolling = true;
-        if (before_roll) before_roll.call(box, vectors, notation, roll);
+        
+        if (before_roll) before_roll.call(box, vectors, throw_data, roll);
         else roll();
 
         var snd = new Audio("./sound/die.wav");
@@ -628,46 +660,46 @@
 
         var box = this;
 
-        // STATS
-        $t.stats = new Stats();
-        $t.stats.domElement.style.position = 'absolute';
-        $t.stats.domElement.style.bottom = '0px';
-        $t.stats.domElement.style.zIndex = 100;
-        container.appendChild( $t.stats.domElement );
-
-        $t.bind(container, ['mousedown', 'touchstart'], function(ev) {
+        bind(container, ['mousedown', 'touchstart'], function(ev) {
             ev.preventDefault();
             box.mouse_time = (new Date()).getTime();
-            box.mouse_start = $t.get_mouse_coords(ev);
+            box.mouse_start = get_mouse_coords(ev);
         });
-        $t.bind(container, ['mouseup', 'touchend'], function(ev) {
+        bind(container, 'mousemove', function(ev) {
+            ev.stopPropagation();
+            var m = get_mouse_coords(ev);
+            // console.log('mouse coords: ' + m.x + ' : ' + m.y);
+            // console.log('box.mouse_start coords: ' + box.mouse_start.x + ' : ' + box.mouse_start.y);
+        });
+        bind(container, ['mouseup', 'touchend'], function(ev) {
             if (box.rolling) return;
             if (box.mouse_start == undefined) return;
             ev.stopPropagation();
-            var m = $t.get_mouse_coords(ev);
+            var m = get_mouse_coords(ev);
             var vector = { x: m.x - box.mouse_start.x, y: -(m.y - box.mouse_start.y) };
             box.mouse_start = undefined;
             var dist = Math.sqrt(vector.x * vector.x + vector.y * vector.y);
-            if (dist < Math.sqrt(box.w * box.h * 0.01)) return;
+            if (dist < Math.sqrt(box.w * box.h * 0.01)) {
+                console.log("you didn't drag long enough");
+                return;
+            } 
             var time_int = (new Date()).getTime() - box.mouse_time;
             if (time_int > 2000) time_int = 2000;
             var boost = Math.sqrt((2500 - time_int) / 2500) * dist * 2;
-            prepare_rnd(function() {
-                throw_dices(box, vector, boost, dist, throw_data, before_roll, after_roll);
-            });
+
+            throw_dices(box, vector, boost, dist, throw_data, before_roll, after_roll);
         });
     }
 
     this.dice_box.prototype.start_throw = function(throw_data, before_roll, after_roll) {
         var box = this;
         if (box.rolling) return;
-        prepare_rnd(function() {
-            var vector = { x: (rnd() * 2 - 1) * box.w, y: -(rnd() * 2 - 1) * box.h };
-            var dist = Math.sqrt(vector.x * vector.x + vector.y * vector.y);
-            var boost = (rnd() + 3) * dist;
-            throw_dices(box, vector, boost, dist, throw_data, before_roll, after_roll);
-        });
-    }
 
+        var vector = { x: (rnd() * 2 - 1) * box.w, y: -(rnd() * 2 - 1) * box.h };
+        var dist = Math.sqrt(vector.x * vector.x + vector.y * vector.y);
+        var boost = (rnd() + 3) * dist;
+
+        throw_dices(box, vector, boost, dist, throw_data, before_roll, after_roll); 
+    }
 }).apply(teal.dice = teal.dice || {});
 

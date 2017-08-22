@@ -1,15 +1,14 @@
 "use strict";
 
+
 function dice_initialize(container) {
 
 
-    var info_div = $t.id('info_div');
-    var canvas = $t.id('canvas');
+    var info_div = document.getElementById('info_div');
+    var canvas = document.getElementById('canvas');
 
     canvas.style.width = window.innerWidth - 1 + 'px';
     canvas.style.height = window.innerHeight - 1 + 'px';
-
-    $t.dice.use_true_random = false;
 
     function getSet() {
         // get random number of dice 1 - 6
@@ -21,14 +20,12 @@ function dice_initialize(container) {
         return set;
     }
 
-    function throw_data() {
-        return {
-            set: ['d6', 'd6', 'd6', 'd6', 'd6', 'd6' ],
-            // set: getSet(),
-            // result: [ 1, 2, 3, 4, 5, 6],
-            // result: [ 1, 1, 1, 1, 1, 1],
-            result: [],
-        };
+    const throw_data = {
+        set: ['d6', 'd6', 'd6', 'd6', 'd6', 'd6' ],
+        // set: getSet(),
+        result: [ 1, 2, 3, 4, 5, 6],
+        // result: [ 1, 1, 1, 1, 1, 1],
+        // result: [],
     }
 
     function before_roll(vectors, notation, callback) {
@@ -40,11 +37,9 @@ function dice_initialize(container) {
 
     var w = window.innerWidth/4;
     var h = window.innerHeight/4;
-    // var w = 400;
-    // var h = 300;
     var box = new $t.dice.dice_box(canvas, { w: w, h: h });
 
-    $t.bind(window, 'resize', function() {
+    window.addEventListener('resize', function() {
         let newW = window.innerWidth - 1 + 'px';
         let newH = window.innerHeight - 1 + 'px';
         canvas.style.width = newW;
