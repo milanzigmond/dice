@@ -1,5 +1,5 @@
 /* eslint-env browser */
-window.roller = {
+const roller = {
   use_true_random: true,
   frame_rate: 1 / 60,
   label_color: '#aaaaaa',
@@ -16,7 +16,13 @@ window.roller = {
 
   function bind(sel, eventname, func, bubble) {
     if (eventname.constructor === Array) {
-      for (const i in eventname) { sel.addEventListener(eventname[i], func, bubble || false); }
+      eventname.forEach((ev) => {
+        sel.addEventListener(ev, func, bubble || false);
+      });
+
+      // for (const i in eventname) { 
+      //   sel.addEventListener(eventname[i], func, bubble || false); 
+      // }
     } else { sel.addEventListener(eventname, func, bubble || false); }
   }
 
@@ -30,9 +36,9 @@ window.roller = {
     return random_storage.length ? random_storage.pop() : Math.random();
   }
 
-  function create_shape(vertices, faces, radius) {
-    let cv = new Array(vertices.length),
-      cf = new Array(faces.length);
+  function create_cannon_shape(vertices, faces, radius) {
+    const cv = new Array(vertices.length);
+    const cf = new Array(faces.length);
     for (let i = 0; i < vertices.length; ++i) {
       const v = vertices[i];
       cv[i] = new CANNON.Vec3(v.x * radius, v.y * radius, v.z * radius);
@@ -52,7 +58,7 @@ window.roller = {
     for (let i = 0; i < faces.length; ++i) {
       const ii = faces[i];
       const fl = ii.length - 1;
-      const aa = Math.PI * 2 / fl;
+      const aa = (Math.PI * 2) / fl;
       for (let j = 0; j < fl - 2; ++j) {
         geom.faces.push(new THREE.Face3(ii[0], ii[j + 1], ii[j + 2], [geom.vertices[ii[0]],
           geom.vertices[ii[j + 1]], geom.vertices[ii[j + 2]]], 0, ii[fl] + 1));
@@ -71,33 +77,33 @@ window.roller = {
   }
 
   function chamfer_geom(vectors, faces, chamfer) {
-    let chamfer_vectors = [],
-      chamfer_faces = [],
-      corner_faces = new Array(vectors.length);
-    for (var i = 0; i < vectors.length; ++i) corner_faces[i] = [];
-    for (var i = 0; i < faces.length; ++i) {
-      let ii = faces[i],
-        fl = ii.length - 1;
+    const chamfer_vectors = [];
+    const chamfer_faces = [];
+    const corner_faces = new Array(vectors.length);
+    for (let i = 0; i < vectors.length; ++i) corner_faces[i] = [];
+    for (let i = 0; i < faces.length; ++i) {
+      const ii = faces[i];
+      const fl = ii.length - 1;
       const center_point = new THREE.Vector3();
-      var face = new Array(fl);
-      for (var j = 0; j < fl; ++j) {
-        var vv = vectors[ii[j]].clone();
+      const face = new Array(fl);
+      for (let j = 0; j < fl; ++j) {
+        const vv = vectors[ii[j]].clone();
         center_point.add(vv);
         corner_faces[ii[j]].push(face[j] = chamfer_vectors.push(vv) - 1);
       }
       center_point.divideScalar(fl);
-      for (var j = 0; j < fl; ++j) {
-        var vv = chamfer_vectors[face[j]];
+      for (let j = 0; j < fl; ++j) {
+        const vv = chamfer_vectors[face[j]];
         vv.subVectors(vv, center_point).multiplyScalar(chamfer).addVectors(vv, center_point);
       }
       face.push(ii[fl]);
       chamfer_faces.push(face);
     }
-    for (var i = 0; i < faces.length - 1; ++i) {
-      for (var j = i + 1; j < faces.length; ++j) {
-        let pairs = [],
-          lastm = -1;
-        for (var m = 0; m < faces[i].length - 1; ++m) {
+    for (let i = 0; i < faces.length - 1; ++i) {
+      for (let j = i + 1; j < faces.length; ++j) {
+        const pairs = [];
+        let lastm = -1;
+        for (let m = 0; m < faces[i].length - 1; ++m) {
           const n = faces[j].indexOf(faces[i][m]);
           if (n >= 0 && n < faces[j].length - 1) {
             if (lastm >= 0 && m != lastm + 1) pairs.unshift([i, m], [j, n]);
@@ -105,22 +111,22 @@ window.roller = {
             lastm = m;
           }
         }
-        if (pairs.length != 4) continue;
+        if (pairs.length !== 4) continue;
         chamfer_faces.push([chamfer_faces[pairs[0][0]][pairs[0][1]],
           chamfer_faces[pairs[1][0]][pairs[1][1]],
           chamfer_faces[pairs[3][0]][pairs[3][1]],
           chamfer_faces[pairs[2][0]][pairs[2][1]], -1]);
       }
     }
-    for (var i = 0; i < corner_faces.length; ++i) {
-      var cf = corner_faces[i],
-        face = [cf[0]],
-        count = cf.length - 1;
+    for (let i = 0; i < corner_faces.length; ++i) {
+      const cf = corner_faces[i];
+      const face = [cf[0]];
+      let count = cf.length - 1;
       while (count) {
-        for (var m = faces.length; m < chamfer_faces.length; ++m) {
+        for (let m = faces.length; m < chamfer_faces.length; ++m) {
           let index = chamfer_faces[m].indexOf(face[face.length - 1]);
           if (index >= 0 && index < 4) {
-            if (--index == -1) index = 3;
+            if (--index === -1) index = 3;
             const next_vertex = chamfer_faces[m][index];
             if (cf.indexOf(next_vertex) >= 0) {
               face.push(next_vertex);
@@ -145,7 +151,7 @@ window.roller = {
     const cg = chamfer_geom(vectors, faces, chamfer);
 
     const geom = make_geom(cg.vectors, cg.faces, radius, tab, af);
-    geom.cannon_shape = create_shape(vectors, faces, radius);
+    geom.cannon_shape = create_cannon_shape(vectors, faces, radius);
     return geom;
   }
 
@@ -155,26 +161,25 @@ window.roller = {
       x: vector.x * Math.cos(random_angle) - vector.y * Math.sin(random_angle),
       y: vector.x * Math.sin(random_angle) + vector.y * Math.cos(random_angle),
     };
-    if (vec.x == 0) vec.x = 0.01;
-    if (vec.y == 0) vec.y = 0.01;
+    if (vec.x === 0) vec.x = 0.01;
+    if (vec.y === 0) vec.y = 0.01;
     return vec;
   }
 
   function get_dice_value(dice) {
-    const vector = new THREE.Vector3(0, 0, dice.dice_type == 'd4' ? -1 : 1);
-    let closest_face,
-      closest_angle = Math.PI * 2;
+    const vector = new THREE.Vector3(0, 0, 1);
+    let closest_face;
+    let closest_angle = Math.PI * 2;
     for (let i = 0, l = dice.geometry.faces.length; i < l; ++i) {
       const face = dice.geometry.faces[i];
-      if (face.materialIndex == 0) continue;
+      if (face.materialIndex === 0) continue;
       const angle = face.normal.clone().applyQuaternion(dice.body.quaternion).angleTo(vector);
       if (angle < closest_angle) {
         closest_angle = angle;
         closest_face = face;
       }
     }
-    let matindex = closest_face.materialIndex - 1;
-    if (dice.dice_type == 'd100') matindex *= 10;
+    const matindex = closest_face.materialIndex - 1;
     return matindex;
   }
 
@@ -217,8 +222,15 @@ window.roller = {
     // console.log(`throw_data.result = ${throw_data.result}`);
 
 
+    vector.x /= dist;
+    vector.y /= dist;
+
+    if (throw_data.set.length == 0) return;
+    const vectors = box.generate_vectors(throw_data, vector, boost);
+    box.rolling = true;
+
     // const uat = roller.dice.use_adapvite_timestep;
-    function roll(request_results) {
+    const roll = (request_results) => {
       if (after_roll) {
         box.clear();
         box.roll(vectors, request_results || throw_data.result, (result) => {
@@ -227,14 +239,7 @@ window.roller = {
           // roller.dice.use_adapvite_timestep = uat;
         });
       }
-    }
-    vector.x /= dist;
-    vector.y /= dist;
-
-
-    if (throw_data.set.length == 0) return;
-    var vectors = box.generate_vectors(throw_data, vector, boost);
-    box.rolling = true;
+    };
 
     if (before_roll) before_roll.call(box, vectors, throw_data, roll);
     else roll();
@@ -376,7 +381,7 @@ window.roller = {
       this.scene.add(this.desk);
 
 
-      this.wh = this.ch / this.aspect / Math.tan(10 * Math.PI / 180);
+      this.wh = this.ch / this.aspect / Math.tan((10 * Math.PI) / 180);
 
       if (this.camera) this.scene.remove(this.camera);
       this.camera = new THREE.PerspectiveCamera(20, this.cw / this.ch, 1, this.wh * 1.3);
@@ -401,9 +406,11 @@ window.roller = {
       this.light.shadow.mapSize.height = 2048;
       this.scene.add(this.light);
 
+      // this.controls = new THREE.OrbitControls(this.camera);
+      // this.controls.addEventListener('change', this.renderer.render);
 
-      this.axis = new THREE.AxisHelper(10);
-      this.scene.add(this.axis);
+      // this.axis = new THREE.AxisHelper(10);
+      // this.scene.add(this.axis);
 
 
       // if (this.light2) this.scene.remove(this.light2);
@@ -434,9 +441,9 @@ window.roller = {
       // console.log(`throw_data: ${throw_data.set}`);
       // console.log(`vector: ${vector.x} : ${vector.y}`);
       // console.log(`boost: ${boost}`);
-
       const vectors = [];
-      for (const i in throw_data.set) {
+
+      throw_data.set.forEach((item) => {
         const vec = make_random_vector(vector);
         const pos = {
           x: this.w * (vec.x > 0 ? -1 : 1) * 0.9,
@@ -447,15 +454,16 @@ window.roller = {
         if (projector > 1.0) pos.y /= projector; else pos.x *= projector;
         const velvec = make_random_vector(vector);
         const velocity = { x: velvec.x * boost, y: velvec.y * boost, z: -10 };
-        const inertia = that.dice_inertia[throw_data.set[i]];
+        const inertia = that.dice_inertia[item];
         const angle = {
           x: -(rnd() * vec.y * 5 + inertia * vec.y),
           y: rnd() * vec.x * 5 + inertia * vec.x,
           z: 0,
         };
         const axis = { x: rnd(), y: rnd(), z: rnd(), a: rnd() };
-        vectors.push({ set: throw_data.set[i], pos, velocity, angle, axis });
-      }
+        vectors.push({ set: item, pos, velocity, angle, axis });
+      });
+
       return vectors;
     };
 
@@ -485,8 +493,8 @@ window.roller = {
         for (let i = 0; i < this.dices.length; ++i) {
           const dice = this.dices[i];
           if (dice.dice_stopped === true) continue;
-          let a = dice.body.angularVelocity,
-            v = dice.body.velocity;
+          const a = dice.body.angularVelocity;
+          const v = dice.body.velocity;
           if (Math.abs(a.x) < e && Math.abs(a.y) < e && Math.abs(a.z) < e &&
                           Math.abs(v.x) < e && Math.abs(v.y) < e && Math.abs(v.z) < e) {
             if (dice.dice_stopped) {
@@ -527,13 +535,14 @@ window.roller = {
       } else {
         this.world.step(that.frame_rate);
       }
-      for (const i in this.scene.children) {
-        const interact = this.scene.children[i];
-        if (interact.body != undefined) {
-          interact.position.copy(interact.body.position);
-          interact.quaternion.copy(interact.body.quaternion);
+
+      this.scene.children.forEach((child) => {
+        if (child.body != undefined) {
+          child.position.copy(child.body.position);
+          child.quaternion.copy(child.body.quaternion);
         }
-      }
+      });
+
       this.renderer.render(this.scene, this.camera);
       this.last_time = this.last_time ? time : (new Date()).getTime();
       if (this.running == threadid && this.check_if_throw_finished()) {
@@ -593,8 +602,11 @@ window.roller = {
       if (values != undefined && values.length) {
         this.use_adapvite_timestep = false;
         const res = this.emulate_throw();
+        console.log(res);
         this.prepare_dices_for_roll(vectors);
-        for (const i in res) { shift_dice_faces(this.dices[i], values[i], res[i]); }
+        res.forEach((i) => {
+          shift_dice_faces(this.dices[i], values[i], res[i]);
+        });
       }
 
       this.callback = callback;
