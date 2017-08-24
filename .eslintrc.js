@@ -8,7 +8,7 @@ module.exports = {
     "rules" : {
         "camelcase" : 0,
         "jsx-a11y/href-no-hash": 0,
-        "linebreak-style": [2, "windows"],
+        "linebreak-style": 0,
         "no-plusplus": 0,
         "func-names" : 0,
         "no-param-reassign": 0,

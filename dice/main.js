@@ -3,6 +3,7 @@
 
 class Roller {
   constructor() {
+    this.dimensions = { x: 400, y: 300 }; // default
     this.use_true_random = true;
     this.frame_rate = 1 / 60;
     this.label_color = '#aaaaaa';
@@ -13,30 +14,17 @@ class Roller {
       shininess: 0,
       emissive: 0x858787,
     };
-    this.dice_mass = {
-      d4: 300,
-      d6: 350,
-      d8: 340,
-      d10: 350,
-      d12: 350,
-      d20: 400,
-      d100: 350 };
-    this.dice_inertia = {
-      d4: 5,
-      d6: 13,
-      d8: 10,
-      d10: 9,
-      d12: 8,
-      d20: 6,
-      d100: 9 };
+    this.dice_mass = 600;
+    this.dice_inertia = 10;
     this.scale = 100;
     this.random_storage = [];
-    this.diceThrownIncorrectly = false;
     this.throwData = {};
     this.throwVector = {};
     this.boost = 0;
 
-    this.create_d6_geometry = function (radius) {
+    this.test = false;
+
+    this.create_geometry = function (radius) {
       const vertices = [[-1, -1, -1], [1, -1, -1], [1, 1, -1], [-1, 1, -1],
         [-1, -1, 1], [1, -1, 1], [1, 1, 1], [-1, 1, 1]];
       const faces = [[0, 3, 2, 1, 1], [1, 2, 6, 5, 2], [0, 1, 5, 4, 3],
@@ -44,8 +32,8 @@ class Roller {
       return Roller.create_geom(vertices, faces, radius, -0.2, Math.PI / 4, 0.9);
     };
 
-    this.create_d6 = function () {
-      if (!this.d6_geometry) this.d6_geometry = this.create_d6_geometry(this.scale);
+    this.create_mesh = function () {
+      if (!this.d6_geometry) this.d6_geometry = this.create_geometry(this.scale);
 
       const specularColor = 'brown';
       const shineness = 5;
@@ -105,6 +93,15 @@ class Roller {
     };
   }
 
+  static getSet() {
+    // get random number of dice 1 - 6
+    const numberOfDice = Math.floor((Math.random() * 6) + 1);
+    const set = [];
+    for (let i = numberOfDice - 1; i >= 0; i--) {
+      set.push('d6');
+    }
+    return set;
+  }
 
   static bind(sel, eventname, func, bubble) {
     if (eventname.constructor === Array) {
@@ -310,12 +307,12 @@ class Roller {
   }
 
   throw_dices(vector, boost, dist, throw_data, before_roll, after_roll) {
-    console.log('-----throw_dices');
-    console.log(`vector = ${vector.x}, ${vector.y}`);
-    console.log(`dist = ${dist}`);
-    console.log(`boost = ${boost}`);
-    console.log(`throw_data.set = ${throw_data.set}`);
-    console.log(`throw_data.result = ${throw_data.result}`);
+    // console.log('-----throw_dices');
+    // console.log(`vector = ${vector.x}, ${vector.y}`);
+    // console.log(`dist = ${dist}`);
+    // console.log(`boost = ${boost}`);
+    // console.log(`throw_data.set = ${throw_data.set}`);
+    // console.log(`throw_data.result = ${throw_data.result}`);
 
 
     vector.x /= dist;
@@ -347,33 +344,10 @@ class Roller {
     snd.play();
   }
 
-  reinit(container, dimensions) {
-    // console.log(`${dimensions.w}, ${dimensions.h}`);
+  createDesk() {
+    if (this.desk) return;
 
-    this.stats = new Stats();
-    this.stats.domElement.style.position = 'absolute';
-    this.stats.domElement.style.left = '0px';
-    this.stats.domElement.style.bottom = '0px';
-    document.body.appendChild(this.stats.domElement);
-
-    this.cw = container.clientWidth / 2;
-    this.ch = container.clientHeight / 2;
-    if (dimensions) {
-      this.w = dimensions.w;
-      this.h = dimensions.h;
-    } else {
-      this.w = this.cw;
-      this.h = this.ch;
-    }
-
-    this.aspect = Math.min(this.cw / this.w, this.ch / this.h);
-    this.scale = Math.sqrt((this.w * this.w) + (this.h * this.h)) / 8;
-
-
-    if (this.desk) this.scene.remove(this.desk);
-
-    this.deskGeometry = new THREE.PlaneGeometry(this.w * 2, this.h * 2, 1, 1);
-
+    this.deskGeometry = new THREE.PlaneGeometry(this.dimensions.w * 2, this.dimensions.h * 2, 1, 1);
 
     const deskTexture = new THREE.TextureLoader().load('./img/pattern.png', (texture) => {
       texture.wrapS = THREE.RepeatWrapping;
@@ -382,12 +356,10 @@ class Roller {
     });
 
     this.deskMaterial = new THREE.MeshPhongMaterial({
-
-      color: 'green',
-      specular: 'red',
+      color: 'brown',
+      specular: 'green',
       shininess: 5,
       map: deskTexture,
-
     });
 
 
@@ -395,16 +367,35 @@ class Roller {
     // new THREE.MeshPhongMaterial({ color: that.desk_color }));
     this.desk.receiveShadow = true;
     this.scene.add(this.desk);
+  }
 
+  reinit(container) {
+    this.stats = new Stats();
+    this.stats.domElement.style.position = 'absolute';
+    this.stats.domElement.style.left = '0px';
+    this.stats.domElement.style.bottom = '0px';
+    document.body.appendChild(this.stats.domElement);
+
+    this.cw = container.clientWidth / 2;
+    this.ch = container.clientHeight / 2;
+    if (this.dimensions) {
+      this.w = this.dimensions.w;
+      this.h = this.dimensions.h;
+    } else {
+      this.w = this.cw;
+      this.h = this.ch;
+    }
+
+    this.aspect = Math.min(this.cw / this.w, this.ch / this.h);
+    this.scale = Math.sqrt((this.w * this.w) + (this.h * this.h)) / 8;
 
     this.wh = this.ch / this.aspect / Math.tan((10 * Math.PI) / 180);
 
     if (this.camera) this.scene.remove(this.camera);
     this.camera = new THREE.PerspectiveCamera(20, this.cw / this.ch, 1, this.wh * 1.3);
     this.camera.position.z = this.wh;
-    this.camera.updateProjectionMatrix();
 
-    this.renderer.setSize(this.cw * 2, this.ch * 2);
+    this.createDesk();
 
     const mw = Math.max(this.w, this.h);
     if (this.light) this.scene.remove(this.light);
@@ -448,7 +439,8 @@ class Roller {
     // this.helper = new THREE.CameraHelper( this.light.shadow.camera );
     // this.scene.add( this.helper );
 
-
+    this.camera.updateProjectionMatrix();
+    this.renderer.setSize(this.cw * 2, this.ch * 2);
     this.renderer.render(this.scene, this.camera);
   }
 
@@ -467,7 +459,7 @@ class Roller {
       if (projector > 1.0) pos.y /= projector; else pos.x *= projector;
       const velvec = this.make_random_vector(this.throwVector);
       const velocity = { x: velvec.x * this.boost, y: velvec.y * this.boost, z: -10 };
-      const inertia = this.dice_inertia[item];
+      const inertia = this.dice_inertia;
       const angle = {
         x: -((this.rnd() * vec.y * 5) + (inertia * vec.y)),
         y: (this.rnd() * vec.x * 5) + (inertia * vec.x),
@@ -481,11 +473,11 @@ class Roller {
   }
 
   create_dice(type, pos, velocity, angle, axis) {
-    const dice = this[`create_${type}`]();
+    const dice = this.create_mesh();
     dice.castShadow = true;
     dice.receiveShadow = true;
     dice.dice_type = type;
-    dice.body = new CANNON.RigidBody(this.dice_mass[type],
+    dice.body = new CANNON.RigidBody(this.dice_mass,
       dice.geometry.cannon_shape, this.dice_body_material);
     dice.body.position.set(pos.x, pos.y, pos.z);
     dice.body.quaternion.setFromAxisAngle(
@@ -510,20 +502,10 @@ class Roller {
         if (dice.dice_stopped !== true) {
           const a = dice.body.angularVelocity;
           const v = dice.body.velocity;
-
-          // console.log(Math.abs(a.x), Math.abs(a.y), Math.abs(a.z),
-          //   Math.abs(v.x), Math.abs(v.y), Math.abs(v.z));
           if (Math.abs(a.x) < e && Math.abs(a.y) < e && Math.abs(a.z) < e &&
             Math.abs(v.x) < e && Math.abs(v.y) < e && Math.abs(v.z) < e) {
             if (dice.dice_stopped) {
               if (this.iteration - dice.dice_stopped > 3) {
-                // console.log(dice.rotation);
-                // console.log(dice.body.quaternion.toString());
-                console.log(dice.body.position.z);
-                if (dice.body.position.z >= 31) {
-                  console.log(`${dice.body.position.z} ---------------------------- ALERT`);
-                  this.diceThrownIncorrectly = true;
-                }
                 dice.dice_stopped = true;
               }
             } else dice.dice_stopped = this.iteration;
@@ -542,12 +524,6 @@ class Roller {
     while (!this.check_if_throw_finished()) {
       ++this.iteration;
       this.world.step(this.frame_rate);
-    }
-    if (this.diceThrownIncorrectly === true) {
-      this.diceThrownIncorrectly = false;
-      console.log('diceThrownIncorrectly');
-      // emulate_throw()§
-    } else {
     }
     return Roller.get_dice_values(this.dices);
   }
@@ -633,38 +609,45 @@ class Roller {
 
   checkDicePosition() {
     // get average y
+    let rollOk = true;
     const values = [];
     this.dices.forEach((dice) => {
       values.push(dice.body.position.z);
     });
-    const sum = values.reduce((previous, current) => current += previous);
+    const sum = values.reduce((previous, current) => {
+      const newCurrent = current + previous;
+      return newCurrent;
+    });
     const avg = sum / values.length;
-    console.log('checkDicePosition');
-    console.log(avg);
-    console.log('checkDicePosition');
+    // console.log('checkDicePosition');
     // check if any dice is above the avg
     this.dices.forEach((dice) => {
-      console.log(`dice.body.position.z:${dice.body.position.z}`);
-      if (dice.body.position.z > avg) {
-        console.log('this dice has\'t rolled properly');
-        return false;
+      // console.log(`dice.body.position.z:${dice.body.position.z}`);
+      if (dice.body.position.z > (avg + 1)) {
+        rollOk = false;
+        // console.error('this dice has\'t rolled properly');
       }
     });
-    return true;
+    return rollOk;
   }
 
   roll(vectors, values, callback) {
-    // console.log('roll');
+    // console.log('FUNCTION CALL : roll');
     // console.log(vectors);
     // console.log(values);
 
     this.prepare_dices_for_roll(vectors);
 
-    if (values != undefined && values.length) {
+    if (values !== undefined && values.length) {
       this.use_adapvite_timestep = false;
-      // console.log('-------- emulating throw');
       const res = this.emulate_throw();
-      console.log(this.checkDicePosition());
+
+      if (!this.checkDicePosition()) {
+        // console.log('getting new vectors');
+        const newVectors = this.generate_vectors();
+        this.roll(newVectors, values, callback);
+        return;
+      }
 
 
       // check if any dice is higher 
@@ -693,20 +676,14 @@ class Roller {
       this.mouse_time = (new Date()).getTime();
       this.mouse_start = Roller.get_mouse_coords(ev);
     });
-    Roller.bind(container, 'mousemove', (ev) => {
-      ev.stopPropagation();
-      const m = Roller.get_mouse_coords(ev);
-      // console.log('mouse coords: ' + m.x + ' : ' + m.y);
-      // console.log('this.mouse_start coords: ' + this.mouse_start.x + ' : ' + this.mouse_start.y);
-    });
     Roller.bind(container, ['mouseup', 'touchend'], (ev) => {
       if (this.rolling) return;
-      if (this.mouse_start == undefined) return;
+      if (this.mouse_start === undefined) return;
       ev.stopPropagation();
       const m = Roller.get_mouse_coords(ev);
       const vector = { x: m.x - this.mouse_start.x, y: -(m.y - this.mouse_start.y) };
       this.mouse_start = undefined;
-      const dist = Math.sqrt(vector.x * vector.x + vector.y * vector.y);
+      const dist = Math.sqrt((vector.x * vector.x) + (vector.y * vector.y));
       if (dist < Math.sqrt(this.w * this.h * 0.01)) {
         // console.log("you didn't drag long enough");
         return;
@@ -722,14 +699,29 @@ class Roller {
   start_throw(throw_data, before_roll, after_roll) {
     if (this.rolling) return;
 
-    const vector = { x: (this.rnd() * 2 - 1) * this.w, y: -(this.rnd() * 2 - 1) * this.h };
-    const dist = Math.sqrt(vector.x * vector.x + vector.y * vector.y);
+    const vector = { x: ((this.rnd() * 2) - 1) * this.w, y: -((this.rnd() * 2) - 1) * this.h };
+    const dist = Math.sqrt((vector.x * vector.x) + (vector.y * vector.y));
     const boost = (this.rnd() + 3) * dist;
 
     this.throw_dices(vector, boost, dist, throw_data, before_roll, after_roll);
   }
 
-  dice_box(container, dimensions) {
+  init(container) {
+    this.dimensions.w = window.innerWidth / 4;
+    this.dimensions.h = window.innerHeight / 4;
+
+    container.style.width = `${window.innerWidth - 1}px`;
+    container.style.height = `${window.innerHeight - 1}px`;
+
+    window.addEventListener('resize', () => {
+      const newW = `${window.innerWidth - 1}px`;
+      const newH = `${window.innerHeight - 1}px`;
+      container.style.width = newW;
+      container.style.height = newH;
+      this.reinit(container);
+    });
+
+
     this.use_adapvite_timestep = true;
     // this.animate_selector = true;
 
@@ -747,7 +739,7 @@ class Roller {
     this.renderer.shadowMap.type = THREE.PCFShadowMap;
     // this.renderer.setClearColor(0xff00ff);
 
-    this.reinit(container, dimensions);
+    this.reinit(container);
 
     this.world.gravity.set(0, 0, -9.8 * 800);
     this.world.broadphase = new CANNON.NaiveBroadphase();
@@ -796,26 +788,11 @@ class Roller {
 }
 
 function dice_initialize(container) {
-  const canvas = document.getElementById('canvas');
-
-  canvas.style.width = `${window.innerWidth - 1}px`;
-  canvas.style.height = `${window.innerHeight - 1}px`;
-
-  function getSet() {
-    // get random number of dice 1 - 6
-    const numberOfDice = Math.floor(Math.random() * 6 + 1);
-    const set = [];
-    for (let i = numberOfDice - 1; i >= 0; i--) {
-      set.push('d6');
-    }
-    return set;
-  }
-
   const throw_data = {
-    set: ['d6', 'd6', 'd6', 'd6', 'd6', 'd6'],
+    set: [1, 1, 1, 1, 1, 1],
     // set: getSet(),
     result: [1, 2, 3, 4, 5, 6],
-    // result: [ 1, 1, 1, 1, 1, 1],
+    // result: [1, 1, 1],
     // result: [],
   };
 
@@ -823,21 +800,11 @@ function dice_initialize(container) {
     callback();
   }
 
-  function after_roll(notation, result) {}
+  function after_roll(notation, result) {
+  }
 
-  const w = window.innerWidth / 4;
-  const h = window.innerHeight / 4;
   const roller = new Roller();
-  roller.dice_box(canvas, { w, h });
-
-  window.addEventListener('resize', () => {
-    const newW = `${window.innerWidth - 1}px`;
-    const newH = `${window.innerHeight - 1}px`;
-    canvas.style.width = newW;
-    canvas.style.height = newH;
-    roller.reinit(canvas, { w, h });
-  });
-
+  roller.init(document.getElementById('canvas'));
   roller.bind_mouse(container, throw_data, before_roll, after_roll);
   roller.start_throw(throw_data, before_roll, after_roll);
 }
