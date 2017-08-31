@@ -14,7 +14,7 @@ class Roller {
       shininess: 0,
       emissive: 0x858787,
     };
-    this.dice_mass = 600;
+    this.dice_mass = 300;
     this.dice_inertia = 10;
     this.scale = 100;
     this.random_storage = [];
@@ -41,7 +41,8 @@ class Roller {
 
       const materials = [
         new THREE.MeshPhongMaterial({
-          map: new THREE.TextureLoader().load('./img/material.png'),
+          // map: new THREE.TextureLoader().load('./img/material.png'),
+          map: new THREE.TextureLoader().load('./img/wood.jpg'),
           // color: 0x000000,
           specular: specularColor,
           shininess: shineness,
@@ -356,9 +357,9 @@ class Roller {
     });
 
     this.deskMaterial = new THREE.MeshPhongMaterial({
-      color: 'brown',
-      specular: 'green',
-      shininess: 5,
+      color: 'purple',
+      specular: 'white',
+      shininess: 2,
       map: deskTexture,
     });
 
@@ -473,24 +474,44 @@ class Roller {
   }
 
   create_dice(type, pos, velocity, angle, axis) {
-    const dice = this.create_mesh();
-    dice.castShadow = true;
-    dice.receiveShadow = true;
-    dice.dice_type = type;
-    dice.body = new CANNON.RigidBody(this.dice_mass,
-      dice.geometry.cannon_shape, this.dice_body_material);
-    dice.body.position.set(pos.x, pos.y, pos.z);
-    dice.body.quaternion.setFromAxisAngle(
+    const geo = this.create_geometry(this.scale);
+    this.geometries.push(geo);
+
+    const body = new CANNON.RigidBody(this.dice_mass,
+      geo.cannon_shape, this.dice_body_material);
+    body.position.set(pos.x, pos.y, pos.z);
+    body.quaternion.setFromAxisAngle(
       new CANNON.Vec3(axis.x, axis.y, axis.z), axis.a * Math.PI * 2,
     );
-    dice.body.angularVelocity.set(angle.x, angle.y, angle.z);
-    dice.body.velocity.set(velocity.x, velocity.y, velocity.z);
-    dice.body.linearDamping = 0.01;
-    dice.body.angularDamping = 0.01;
+    body.angularVelocity.set(angle.x, angle.y, angle.z);
+    body.velocity.set(velocity.x, velocity.y, velocity.z);
+    body.linearDamping = 0.01;
+    body.angularDamping = 0.01;
+
+    console.log(body);
+
+    this.bodies.push(body);
+    // this.dices.push(dice);
+    this.world.add(body);
+
+
+    // const dice = this.create_mesh();
+    // dice.castShadow = true;
+    // dice.receiveShadow = true;
+    // dice.body = new CANNON.RigidBody(this.dice_mass,
+    //   dice.geometry.cannon_shape, this.dice_body_material);
+    // dice.body.position.set(pos.x, pos.y, pos.z);
+    // dice.body.quaternion.setFromAxisAngle(
+    //   new CANNON.Vec3(axis.x, axis.y, axis.z), axis.a * Math.PI * 2,
+    // );
+    // dice.body.angularVelocity.set(angle.x, angle.y, angle.z);
+    // dice.body.velocity.set(velocity.x, velocity.y, velocity.z);
+    // dice.body.linearDamping = 0.01;
+    // dice.body.angularDamping = 0.01;
     // console.log(dice);
-    this.scene.add(dice);
-    this.dices.push(dice);
-    this.world.add(dice.body);
+    // this.scene.add(dice);
+    // this.dices.push(dice);
+    // this.world.add(dice.body);
   }
 
   check_if_throw_finished() {
@@ -521,7 +542,11 @@ class Roller {
   }
 
   emulate_throw() {
-    while (!this.check_if_throw_finished()) {
+    // while (!this.check_if_throw_finished()) {
+    console.log(this.world);
+    console.log(this.frame_rate);
+    while (this.iteration < 300) {
+      console.log(this.bodies[0].position.z);
       ++this.iteration;
       this.world.step(this.frame_rate);
     }
@@ -597,14 +622,11 @@ class Roller {
     this.clear();
     this.iteration = 0;
     vectors.forEach((vector) => {
+      console.log('vector');
+      console.log(vector);
       this.create_dice(vector.set, vector.pos, vector.velocity,
         vector.angle, vector.axis);
     });
-
-    // for (const i in vectors) {
-    //   this.create_dice(vectors[i].set, vectors[i].pos, vectors[i].velocity,
-    //     vectors[i].angle, vectors[i].axis);
-    // }
   }
 
   checkDicePosition() {
@@ -639,23 +661,18 @@ class Roller {
     this.prepare_dices_for_roll(vectors);
 
     if (values !== undefined && values.length) {
-      this.use_adapvite_timestep = false;
+      // this.use_adapvite_timestep = false;
       const res = this.emulate_throw();
+      console.log('res:');
+      console.log(res);
+      return;
 
       if (!this.checkDicePosition()) {
         // console.log('getting new vectors');
         const newVectors = this.generate_vectors();
         this.roll(newVectors, values, callback);
-        return;
       }
 
-
-      // check if any dice is higher 
-      // generate new vectors
-      // const vectors = this.generate_vectors(throw_data, vector, boost);
-      // emulate again
-
-      // console.log('-------- finished emulating throw');
       // console.log(res);
       this.prepare_dices_for_roll(vectors);
 
@@ -726,6 +743,8 @@ class Roller {
     // this.animate_selector = true;
 
     this.dices = [];
+    this.bodies = [];
+    this.geometries = [];
     this.scene = new THREE.Scene();
     window.scene = this.scene;
     this.world = new CANNON.World();
